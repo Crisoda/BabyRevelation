@@ -1104,6 +1104,54 @@ let hasVoted = false;
         createBalloons();
         updateCountdown();
         setInterval(updateCountdown, 1000);
+
+        // Variables de conteo (cargadas desde localStorage si ya existen)
+  let votosNino = localStorage.getItem("votosNino") ? parseInt(localStorage.getItem("votosNino")) : 0;
+  let votosNina = localStorage.getItem("votosNina") ? parseInt(localStorage.getItem("votosNina")) : 0;
+
+  // Función para mostrar resultados en pantalla
+  function mostrarResultados() {
+    document.getElementById("resultado").innerText =
+      `👦 Niño: ${votosNino} votos | 👧 Niña: ${votosNina} votos`;
+  }
+
+  // Llamar apenas cargue la página
+  mostrarResultados();
+
+  // Revisar si ya votó
+  if (localStorage.getItem("yaVoto") === "true") {
+    document.getElementById("btn-nino").disabled = true;
+    document.getElementById("btn-nina").disabled = true;
+    document.getElementById("resultado").innerText += " (Ya votaste)";
+  }
+
+  // Votar por niño
+  document.getElementById("btn-nino").addEventListener("click", () => {
+    if (localStorage.getItem("yaVoto") === "true") {
+      alert("Ya votaste.");
+      return;
+    }
+    votosNino++;
+    localStorage.setItem("votosNino", votosNino);
+    localStorage.setItem("yaVoto", "true");
+    mostrarResultados();
+    document.getElementById("btn-nino").disabled = true;
+    document.getElementById("btn-nina").disabled = true;
+  });
+
+  // Votar por niña
+  document.getElementById("btn-nina").addEventListener("click", () => {
+    if (localStorage.getItem("yaVoto") === "true") {
+      alert("Ya votaste.");
+      return;
+    }
+    votosNina++;
+    localStorage.setItem("votosNina", votosNina);
+    localStorage.setItem("yaVoto", "true");
+    mostrarResultados();
+    document.getElementById("btn-nino").disabled = true;
+    document.getElementById("btn-nina").disabled = true;
+  });
     </script>
 </body>
 </html>
