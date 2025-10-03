@@ -940,7 +940,7 @@ margin-top: 25px; font-style: italic;">
         // ========== SISTEMA DE VOTACIÓN CON API GRATUITA ==========
         // Configuración de la API (JSONBin.io)
         const API_URL = 'https://api.jsonbin.io/v3/b/68e046ef43b1c97be9598609'; // Bin 
-        const API_KEY = '$2a$10$JW71HN9x6iU2Fovv3vd70u8/66phv/yNcHaXMaWMNeyLzzbX0Eimm'; // API Key 
+        const API_KEY = '$2a$10$4zxrxxTKaaQ82I/vUE7SbetEL58/6LxswjCHLr3P8nNuo59Y1hYma'; // API Key 
 
         let votes = { boy: 0, girl: 0 };
         let hasVoted = false;
@@ -955,12 +955,12 @@ margin-top: 25px; font-style: italic;">
                 }
 
                 // Cargar votos globales desde la API
-                const response = await fetch(API_URL + '/latest', {
-                    method: 'GET',
-                    headers: {
-                        'X-Master-Key': API_KEY
-                    }
-                });
+                    const response = await fetch(API_URL + '/latest', {
+                        method: 'GET',
+                        headers: {
+                            'X-Access-Key': API_KEY
+                        }
+                    });
 
                 if (response.ok) {
                     const data = await response.json();
@@ -1007,7 +1007,7 @@ margin-top: 25px; font-style: italic;">
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
+                        'X-Access-Key': API_KEY
                     },
                     body: JSON.stringify(votes)
                 });
