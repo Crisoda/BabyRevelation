@@ -937,12 +937,48 @@ margin-top: 25px; font-style: italic;">
             }
         }
 
-        // Sistema de votación con localStorage
+        // ========== SISTEMA DE VOTACIÓN CON API GRATUITA ==========
+        // Configuración de la API (JSONBin.io)
+        const API_URL = 'https://api.jsonbin.io/v3/b/6798f123acd3cb34a8c15e52'; // Bin ID temporal de prueba
+        const API_KEY = '$2a$10$Cqr4HEKXGm6z9F5vOp1H2.xJ8KDqNGBvqKYZL5VYqQZH7YqXqXqXq'; // API Key temporal
+
         let votes = { boy: 0, girl: 0 };
         let hasVoted = false;
 
-        // Cargar votos guardados al iniciar
-        function loadVotes() {
+        // Cargar votos desde la API
+        async function loadVotes() {
+            try {
+                // Primero verificar si ya votó localmente
+                const localVoted = localStorage.getItem('babyRevealHasVoted');
+                if (localVoted === 'true') {
+                    hasVoted = true;
+                }
+
+                // Cargar votos globales desde la API
+                const response = await fetch(API_URL + '/latest', {
+                    method: 'GET',
+                    headers: {
+                        'X-Master-Key': API_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.record && data.record.boy !== undefined) {
+                        votes = data.record;
+                        document.getElementById('voteResults').style.display = 'block';
+                        updateVoteResults();
+                    }
+                }
+            } catch (e) {
+                console.log('Error al cargar votos:', e);
+                // Si falla la API, usar localStorage local
+                loadLocalVotes();
+            }
+        }
+
+        // Fallback a localStorage si la API falla
+        function loadLocalVotes() {
             try {
                 const savedVotes = localStorage.getItem('babyRevealVotes');
                 const savedHasVoted = localStorage.getItem('babyRevealHasVoted');
@@ -960,11 +996,33 @@ margin-top: 25px; font-style: italic;">
                     updateVoteResults();
                 }
             } catch (e) {
-                console.log('Error al cargar votos:', e);
+                console.log('Error al cargar votos locales:', e);
             }
         }
 
-        function vote(gender) {
+        // Guardar votos en la API
+        async function saveVotes() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(votes)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al guardar votos');
+                }
+            } catch (e) {
+                console.log('Error al guardar en API:', e);
+                // Guardar localmente como fallback
+                localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
+            }
+        }
+
+        async function vote(gender) {
             if (hasVoted) {
                 alert('¡Ya has votado! Gracias por tu predicción 😊\n\nRecuerda venir vestido con el color de tu equipo el día del evento.');
                 return;
@@ -973,14 +1031,13 @@ margin-top: 25px; font-style: italic;">
             votes[gender]++;
             hasVoted = true;
             
-            // Guardar en localStorage
-            try {
-                localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
-                localStorage.setItem('babyRevealHasVoted', 'true');
-            } catch (e) {
-                console.log('Error al guardar votos:', e);
-            }
+            // Guardar localmente que ya votó
+            localStorage.setItem('babyRevealHasVoted', 'true');
             
+            // Guardar en la API
+            await saveVotes();
+            
+            // Actualizar vista
             updateVoteResults();
             document.getElementById('voteResults').style.display = 'block';
             
@@ -993,6 +1050,9 @@ margin-top: 25px; font-style: italic;">
             } else {
                 alert('¡Perfecto! Apostaste por Niña 👧💖\n\nLa dinámica es que el día del evento vengas con alguna prenda de color ROSA para mostrar tu apoyo.\n\n¡Nos vemos el 12 de octubre!');
             }
+
+            // Recargar votos después de 1 segundo para ver actualizaciones
+            setTimeout(loadVotes, 1000);
         }
 
         function updateVoteResults() {
@@ -1024,6 +1084,9 @@ margin-top: 25px; font-style: italic;">
             }
         }
 
+        // Recargar votos cada 10 segundos para ver actualizaciones en tiempo real
+        setInterval(loadVotes, 10000);
+
         // Control de música desde YouTube (solo audio)
         const videoId = '-C7GwTVg3II';
         const container = document.getElementById('youtubeAudioContainer');
@@ -1033,7 +1096,6 @@ margin-top: 25px; font-style: italic;">
         let musicPlaying = false;
         let readyToPlay = false;
 
-        // Cargar API de YouTube
         function loadYouTubeAPI() {
             const tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
@@ -1041,7 +1103,6 @@ margin-top: 25px; font-style: italic;">
             firstScript.parentNode.insertBefore(tag, firstScript);
         }
 
-        // Función que la API llama cuando está lista
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('youtubeAudioContainer', {
                 height: '0',
@@ -1067,7 +1128,6 @@ margin-top: 25px; font-style: italic;">
             });
         }
 
-        // Habilitar audio al primer clic/tap
         function enableAudioOnUserGesture() {
             if (!ytPlayer || !readyToPlay) return;
             ytPlayer.unMute();
@@ -1078,7 +1138,6 @@ margin-top: 25px; font-style: italic;">
             document.removeEventListener('touchstart', enableAudioOnUserGesture);
         }
 
-        // Botón para pausar/reanudar
         function toggleMusic() {
             if (!ytPlayer) return;
             if (musicPlaying) {
@@ -1091,7 +1150,6 @@ margin-top: 25px; font-style: italic;">
             updateMusicButton();
         }
 
-        // Actualiza el botón
         function updateMusicButton() {
             if (!musicBtn) return;
             if (musicPlaying) {
@@ -1103,20 +1161,17 @@ margin-top: 25px; font-style: italic;">
             }
         }
 
-        // Escuchar primer gesto del usuario
         document.addEventListener('click', enableAudioOnUserGesture, { once: true });
         document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
 
-        // Cargar la API de YouTube
         loadYouTubeAPI();
 
-        // Conectar el botón flotante
         if (musicBtn) {
             musicBtn.addEventListener('click', toggleMusic);
         }
 
         // Inicialización
-        loadVotes(); // Cargar votos al inicio
+        loadVotes();
         createConfetti();
         createBalloons();
         updateCountdown();
