@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Revelación del Bebé - Vanessa & Cristian</title>
     <style>
+        .call-float {
+    position: fixed;
+    bottom: 100px; /* más arriba si también tienes WhatsApp */
+    right: 20px;
+    background: #007bff;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: transform 0.3s;
+    text-decoration: none;
+}
+
+.call-float:hover {
+    transform: scale(1.1);
+    background: #0056b3;
+}
+
         * {
             margin: 0;
             padding: 0;
@@ -874,16 +899,24 @@
             <div class="contact-buttons">
                 <a href="https://wa.me/573172247552?text=Hola!%20Tengo%20una%20pregunta%20sobre%20la%20revelación%20del%20bebé" target="_blank" class="contact-btn">
                     <span style="font-size: 1.5em;">📱</span>
-                    WhatsApp: 317 224 7552
+                    WhatsApp
                 </a>
+                <a href="tel:+573172247552" class="whatsapp-float call-float">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3b/Phone_font_awesome.svg" 
+       alt="Llamar" width="40">
+</a>
+                
             </div>
         </div>
     </div>
 
     <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
-
-    <!-- Contenedor para el reproductor de YouTube (invisible) -->
-<div id="youtubeAudioContainer" style="width:0; height:0; overflow:hidden;"></div>
+    
+    <!-- Iframe oculto para la música de YouTube -->
+    <iframe id="musicIframe" 
+            allow="autoplay" 
+            frameborder="0">
+    </iframe>
 
     <footer>
         <p style="font-size: 1.2em; margin-bottom: 10px;">✨ Con amor, esperamos tu compañía ✨</p>
@@ -1016,97 +1049,32 @@
             }
         }
 
-       // ---------------- CONTROL DE MÚSICA DESDE YOUTUBE (solo audio) ----------------
-const videoId = '-C7GwTVg3II'; // ID del video de YouTube
-const container = document.getElementById('youtubeAudioContainer');
-const musicBtn = document.getElementById('musicBtn');
+        // Control de música funcional con YouTube
+        let musicPlaying = false;
+        let musicIframe = document.getElementById('musicIframe');
 
-let ytPlayer;
-let musicPlaying = false;
-let readyToPlay = false;
-
-// Cargar API de YouTube
-function loadYouTubeAPI() {
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  const firstScript = document.getElementsByTagName('script')[0];
-  firstScript.parentNode.insertBefore(tag, firstScript);
-}
-
-// Función que la API llama cuando está lista
-function onYouTubeIframeAPIReady() {
-  ytPlayer = new YT.Player('youtubeAudioContainer', {
-    height: '0',
-    width: '0',
-    videoId: videoId,
-    playerVars: {
-      autoplay: 1,
-      loop: 1,
-      playlist: videoId,
-      controls: 0,
-      disablekb: 1,
-      modestbranding: 1,
-      rel: 0,
-      mute: 1, // arranca silenciado
-      playsinline: 1
-    },
-    events: {
-      onReady: function(event) {
-        readyToPlay = true;
-        event.target.playVideo();
-      }
-    }
-  });
-}
-
-// Habilitar audio al primer clic/tap
-function enableAudioOnUserGesture() {
-  if (!ytPlayer || !readyToPlay) return;
-  ytPlayer.unMute();
-  ytPlayer.playVideo();
-  musicPlaying = true;
-  updateMusicButton();
-  document.removeEventListener('click', enableAudioOnUserGesture);
-  document.removeEventListener('touchstart', enableAudioOnUserGesture);
-}
-
-// Botón para pausar/reanudar
-function toggleMusic() {
-  if (!ytPlayer) return;
-  if (musicPlaying) {
-    ytPlayer.pauseVideo();
-    musicPlaying = false;
-  } else {
-    ytPlayer.playVideo();
-    musicPlaying = true;
-  }
-  updateMusicButton();
-}
-
-// Actualiza el botón
-function updateMusicButton() {
-  if (!musicBtn) return;
-  if (musicPlaying) {
-    musicBtn.textContent = '🔇';
-    musicBtn.title = 'Pausar música';
-  } else {
-    musicBtn.textContent = '🎵';
-    musicBtn.title = 'Reproducir música';
-  }
-}
-
-// Escuchar primer gesto del usuario
-document.addEventListener('click', enableAudioOnUserGesture, { once: true });
-document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
-
-// Cargar la API de YouTube
-loadYouTubeAPI();
-
-// Conectar el botón flotante
-if (musicBtn) {
-  musicBtn.addEventListener('click', toggleMusic);
-}
-// -------------------------------------------------------------------------------
+        function toggleMusic() {
+            const btn = document.getElementById('musicBtn');
+            
+            if (!musicPlaying) {
+                // Reproducir música
+                // URL del video de YouTube con parámetros para autoplay y loop
+                const videoId = '-C7GwTVg3II'; // ID del video de YouTube
+                const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1`;
+                
+                musicIframe.src = iframeSrc;
+                musicPlaying = true;
+                btn.textContent = '🔇';
+                btn.title = 'Pausar música';
+            } else {
+                // Pausar música (removiendo el iframe)
+                musicIframe.src = '';
+                musicPlaying = false;
+                btn.textContent = '🎵';
+                btn.title = 'Reproducir música';
+            }
+        }
+        
 
         // Inicialización
         createConfetti();
