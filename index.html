@@ -881,12 +881,9 @@
     </div>
 
     <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
-    
-    <!-- Iframe oculto para la música de YouTube -->
-    <iframe id="musicIframe" 
-            allow="autoplay" 
-            frameborder="0">
-    </iframe>
+
+    <!-- Contenedor para el reproductor de YouTube (invisible) -->
+<div id="youtubeAudioContainer" style="width:0; height:0; overflow:hidden;"></div>
 
     <footer>
         <p style="font-size: 1.2em; margin-bottom: 10px;">✨ Con amor, esperamos tu compañía ✨</p>
@@ -1019,31 +1016,97 @@
             }
         }
 
-        // Control de música funcional con YouTube
-        let musicPlaying = false;
-        let musicIframe = document.getElementById('musicIframe');
+       // ---------------- CONTROL DE MÚSICA DESDE YOUTUBE (solo audio) ----------------
+const videoId = '-C7GwTVg3II'; // ID del video de YouTube
+const container = document.getElementById('youtubeAudioContainer');
+const musicBtn = document.getElementById('musicBtn');
 
-        function toggleMusic() {
-            const btn = document.getElementById('musicBtn');
-            
-            if (!musicPlaying) {
-                // Reproducir música
-                // URL del video de YouTube con parámetros para autoplay y loop
-                const videoId = '-C7GwTVg3II'; // ID del video de YouTube
-                const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1`;
-                
-                musicIframe.src = iframeSrc;
-                musicPlaying = true;
-                btn.textContent = '🔇';
-                btn.title = 'Pausar música';
-            } else {
-                // Pausar música (removiendo el iframe)
-                musicIframe.src = '';
-                musicPlaying = false;
-                btn.textContent = '🎵';
-                btn.title = 'Reproducir música';
-            }
-        }
+let ytPlayer;
+let musicPlaying = false;
+let readyToPlay = false;
+
+// Cargar API de YouTube
+function loadYouTubeAPI() {
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  const firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode.insertBefore(tag, firstScript);
+}
+
+// Función que la API llama cuando está lista
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player('youtubeAudioContainer', {
+    height: '0',
+    width: '0',
+    videoId: videoId,
+    playerVars: {
+      autoplay: 1,
+      loop: 1,
+      playlist: videoId,
+      controls: 0,
+      disablekb: 1,
+      modestbranding: 1,
+      rel: 0,
+      mute: 1, // arranca silenciado
+      playsinline: 1
+    },
+    events: {
+      onReady: function(event) {
+        readyToPlay = true;
+        event.target.playVideo();
+      }
+    }
+  });
+}
+
+// Habilitar audio al primer clic/tap
+function enableAudioOnUserGesture() {
+  if (!ytPlayer || !readyToPlay) return;
+  ytPlayer.unMute();
+  ytPlayer.playVideo();
+  musicPlaying = true;
+  updateMusicButton();
+  document.removeEventListener('click', enableAudioOnUserGesture);
+  document.removeEventListener('touchstart', enableAudioOnUserGesture);
+}
+
+// Botón para pausar/reanudar
+function toggleMusic() {
+  if (!ytPlayer) return;
+  if (musicPlaying) {
+    ytPlayer.pauseVideo();
+    musicPlaying = false;
+  } else {
+    ytPlayer.playVideo();
+    musicPlaying = true;
+  }
+  updateMusicButton();
+}
+
+// Actualiza el botón
+function updateMusicButton() {
+  if (!musicBtn) return;
+  if (musicPlaying) {
+    musicBtn.textContent = '🔇';
+    musicBtn.title = 'Pausar música';
+  } else {
+    musicBtn.textContent = '🎵';
+    musicBtn.title = 'Reproducir música';
+  }
+}
+
+// Escuchar primer gesto del usuario
+document.addEventListener('click', enableAudioOnUserGesture, { once: true });
+document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
+
+// Cargar la API de YouTube
+loadYouTubeAPI();
+
+// Conectar el botón flotante
+if (musicBtn) {
+  musicBtn.addEventListener('click', toggleMusic);
+}
+// -------------------------------------------------------------------------------
 
         // Inicialización
         createConfetti();
