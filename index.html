@@ -348,6 +348,14 @@
             transition: all 0.3s;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+        /* estado deshabilitado para los botones de votación */
+        .vote-btn[disabled], .vote-btn.disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: none;
+          pointer-events: none;
+        }
 
         .vote-btn.boy {
             background: linear-gradient(135deg, #89cff0 0%, #4a90e2 100%);
@@ -955,44 +963,79 @@
         }
 
         // Sistema de votación con almacenamiento en variables
-        let votes = { boy: 0, girl: 0 };
-        let hasVoted = false;
+// === Sistema de votación (localStorage, persistente por navegador) ===
+let votes = { boy: 0, girl: 0 };
+let hasVoted = false;
 
-        // Intentar cargar votos guardados
-        try {
-            const savedVotes = sessionStorage.getItem('babyRevealVotes');
-            const savedHasVoted = sessionStorage.getItem('babyRevealHasVoted');
-            if (savedVotes) {
-                votes = JSON.parse(savedVotes);
-                hasVoted = savedHasVoted === 'true';
-                if (votes.boy > 0 || votes.girl > 0) {
-                    document.getElementById('voteResults').style.display = 'block';
-                    updateVoteResults();
-                }
-            }
-        } catch (e) {
-            console.log('Usando almacenamiento en memoria');
-        }
+// Inicializar estado de votación desde localStorage (IIFE)
+(function initVoting() {
+  try {
+    const savedVotes = localStorage.getItem('babyRevealVotes');
+    const savedHasVoted = localStorage.getItem('babyRevealHasVoted');
+    if (savedVotes) {
+      votes = JSON.parse(savedVotes);
+    }
+    hasVoted = savedHasVoted === 'true';
 
-        function vote(gender) {
-            if (hasVoted) {
-                alert('¡Ya has votado! Gracias por tu predicción 😊');
-                return;
-            }
+    // Si ya hay votos, mostramos los resultados y los actualizamos
+    if ((votes.boy || 0) > 0 || (votes.girl || 0) > 0) {
+      document.getElementById('voteResults').style.display = 'block';
+      updateVoteResults();
+    }
 
-            votes[gender]++;
-            hasVoted = true;
-            
-            // Guardar en sessionStorage si está disponible
-            try {
-                sessionStorage.setItem('babyRevealVotes', JSON.stringify(votes));
-                sessionStorage.setItem('babyRevealHasVoted', 'true');
-            } catch (e) {
-                console.log('SessionStorage no disponible');
-            }
+    // Si el visitante ya votó en este navegador, desactivar botones
+    if (hasVoted) {
+      disableVoteButtons();
+    }
+  } catch (e) {
+    console.warn('localStorage no disponible, continuando en memoria:', e);
+  }
+})();
+
+
+      function vote(gender) {
+  // Protección básica
+  if (hasVoted) {
+    alert('❌ Ya has votado. Gracias por tu predicción 😊');
+    return;
+  }
+  if (gender !== 'boy' && gender !== 'girl') return;
+
+  // Incrementar voto
+  votes[gender] = (votes[gender] || 0) + 1;
+  hasVoted = true;
+
+  // Guardar en localStorage (si está disponible)
+  try {
+    localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
+    localStorage.setItem('babyRevealHasVoted', 'true');
+  } catch (e) {
+    console.warn('No se pudo guardar en localStorage:', e);
+  }
+
+  // Actualizar UI
+  updateVoteResults();
+  document.getElementById('voteResults').style.display = 'block';
+
+  // Desactivar botones para evitar re-votos en este navegador
+  disableVoteButtons();
+
+  // Confeti y mensaje de confirmación
+  createConfetti();
+  alert(gender === 'boy' ? '✅ ¡Votaste por Niño! 👦 Gracias por tu predicción' : '✅ ¡Votaste por Niña! 👧 Gracias por tu predicción');
+}
             
             updateVoteResults();
             document.getElementById('voteResults').style.display = 'block';
+
+        function disableVoteButtons() {
+  const btns = document.querySelectorAll('.vote-btn');
+  btns.forEach(b => {
+    b.disabled = true;
+    b.classList.add('disabled'); // por si en CSS quieres manejar
+  });
+}
+
             
             // Animación de confeti adicional
             createConfetti();
