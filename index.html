@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Revelación del Bebé - Vanessa & Cristian</title>
     <style>
-        
-.call-float:hover {
-    transform: scale(1.1);
-    background: #0056b3;
-}
-
         * {
             margin: 0;
             padding: 0;
@@ -348,14 +342,6 @@
             transition: all 0.3s;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        /* estado deshabilitado para los botones de votación */
-        .vote-btn[disabled], .vote-btn.disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none !important;
-          box-shadow: none;
-          pointer-events: none;
-        }
 
         .vote-btn.boy {
             background: linear-gradient(135deg, #89cff0 0%, #4a90e2 100%);
@@ -666,7 +652,7 @@
         .parents-names {
             text-align: center;
             font-size: 1.3em;
-            color: #FFFFFF;
+            color: #d4af37;
             margin: 20px 0;
             font-weight: bold;
         }
@@ -884,27 +870,20 @@
         <div class="section contact-info">
             <h2>📞 Contacto</h2>
             <p style="font-size: 1.2em; margin: 20px 0;">¿Tienes alguna pregunta? ¡Contáctanos!</p>
-            <p style="color:#d4af37;">Vanessa Martínez & Cristian Peñaloza</p>
+            <p class="parents-names">Vanessa Martínez & Cristian Peñaloza</p>
             <div class="contact-buttons">
                 <a href="https://wa.me/573172247552?text=Hola!%20Tengo%20una%20pregunta%20sobre%20la%20revelación%20del%20bebé" target="_blank" class="contact-btn">
                     <span style="font-size: 1.5em;">📱</span>
-                    WhatsApp
-                </a>
-                <a href="tel:+573172247552" class="contact-btn">
-                  <span style="font-size: 1.5em;">☎️</span>
-                       Llamar
+                    WhatsApp: 317 224 7552
                 </a>
             </div>
         </div>
     </div>
 
     <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
-    
-    <!-- Iframe oculto para la música de YouTube -->
-    <iframe id="musicIframe" 
-            allow="autoplay" 
-            frameborder="0">
-    </iframe>
+
+    <!-- Contenedor para el reproductor de YouTube (invisible) -->
+<div id="youtubeAudioContainer" style="width:0; height:0; overflow:hidden;"></div>
 
     <footer>
         <p style="font-size: 1.2em; margin-bottom: 10px;">✨ Con amor, esperamos tu compañía ✨</p>
@@ -963,79 +942,44 @@
         }
 
         // Sistema de votación con almacenamiento en variables
-// === Sistema de votación (localStorage, persistente por navegador) ===
-let votes = { boy: 0, girl: 0 };
-let hasVoted = false;
+        let votes = { boy: 0, girl: 0 };
+        let hasVoted = false;
 
-// Inicializar estado de votación desde localStorage (IIFE)
-(function initVoting() {
-  try {
-    const savedVotes = localStorage.getItem('babyRevealVotes');
-    const savedHasVoted = localStorage.getItem('babyRevealHasVoted');
-    if (savedVotes) {
-      votes = JSON.parse(savedVotes);
-    }
-    hasVoted = savedHasVoted === 'true';
+        // Intentar cargar votos guardados
+        try {
+            const savedVotes = sessionStorage.getItem('babyRevealVotes');
+            const savedHasVoted = sessionStorage.getItem('babyRevealHasVoted');
+            if (savedVotes) {
+                votes = JSON.parse(savedVotes);
+                hasVoted = savedHasVoted === 'true';
+                if (votes.boy > 0 || votes.girl > 0) {
+                    document.getElementById('voteResults').style.display = 'block';
+                    updateVoteResults();
+                }
+            }
+        } catch (e) {
+            console.log('Usando almacenamiento en memoria');
+        }
 
-    // Si ya hay votos, mostramos los resultados y los actualizamos
-    if ((votes.boy || 0) > 0 || (votes.girl || 0) > 0) {
-      document.getElementById('voteResults').style.display = 'block';
-      updateVoteResults();
-    }
+        function vote(gender) {
+            if (hasVoted) {
+                alert('¡Ya has votado! Gracias por tu predicción 😊');
+                return;
+            }
 
-    // Si el visitante ya votó en este navegador, desactivar botones
-    if (hasVoted) {
-      disableVoteButtons();
-    }
-  } catch (e) {
-    console.warn('localStorage no disponible, continuando en memoria:', e);
-  }
-})();
-
-
-      function vote(gender) {
-  // Protección básica
-  if (hasVoted) {
-    alert('❌ Ya has votado. Gracias por tu predicción 😊');
-    return;
-  }
-  if (gender !== 'boy' && gender !== 'girl') return;
-
-  // Incrementar voto
-  votes[gender] = (votes[gender] || 0) + 1;
-  hasVoted = true;
-
-  // Guardar en localStorage (si está disponible)
-  try {
-    localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
-    localStorage.setItem('babyRevealHasVoted', 'true');
-  } catch (e) {
-    console.warn('No se pudo guardar en localStorage:', e);
-  }
-
-  // Actualizar UI
-  updateVoteResults();
-  document.getElementById('voteResults').style.display = 'block';
-
-  // Desactivar botones para evitar re-votos en este navegador
-  disableVoteButtons();
-
-  // Confeti y mensaje de confirmación
-  createConfetti();
-  alert(gender === 'boy' ? '✅ ¡Votaste por Niño! 👦 Gracias por tu predicción' : '✅ ¡Votaste por Niña! 👧 Gracias por tu predicción');
-}
+            votes[gender]++;
+            hasVoted = true;
+            
+            // Guardar en sessionStorage si está disponible
+            try {
+                sessionStorage.setItem('babyRevealVotes', JSON.stringify(votes));
+                sessionStorage.setItem('babyRevealHasVoted', 'true');
+            } catch (e) {
+                console.log('SessionStorage no disponible');
+            }
             
             updateVoteResults();
             document.getElementById('voteResults').style.display = 'block';
-
-        function disableVoteButtons() {
-  const btns = document.querySelectorAll('.vote-btn');
-  btns.forEach(b => {
-    b.disabled = true;
-    b.classList.add('disabled'); // por si en CSS quieres manejar
-  });
-}
-
             
             // Animación de confeti adicional
             createConfetti();
@@ -1072,86 +1016,103 @@ let hasVoted = false;
             }
         }
 
-        // Control de música funcional con YouTube
-        let musicPlaying = false;
-        let musicIframe = document.getElementById('musicIframe');
+       // ---------------- CONTROL DE MÚSICA DESDE YOUTUBE (solo audio) ----------------
+const videoId = '-C7GwTVg3II'; // ID del video de YouTube
+const container = document.getElementById('youtubeAudioContainer');
+const musicBtn = document.getElementById('musicBtn');
 
-        function toggleMusic() {
-            const btn = document.getElementById('musicBtn');
-            
-            if (!musicPlaying) {
-                // Reproducir música
-                // URL del video de YouTube con parámetros para autoplay y loop
-                const videoId = '-C7GwTVg3II'; // ID del video de YouTube
-                const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&loop=1&playlist=${videoId}&controls=0&showinfo=0&modestbranding=1`;
-                
-                musicIframe.src = iframeSrc;
-                musicPlaying = true;
-                btn.textContent = '🔇';
-                btn.title = 'Pausar música';
-            } else {
-                // Pausar música (removiendo el iframe)
-                musicIframe.src = '';
-                musicPlaying = false;
-                btn.textContent = '🎵';
-                btn.title = 'Reproducir música';
-            }
-        }
-        
+let ytPlayer;
+let musicPlaying = false;
+let readyToPlay = false;
+
+// Cargar API de YouTube
+function loadYouTubeAPI() {
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  const firstScript = document.getElementsByTagName('script')[0];
+  firstScript.parentNode.insertBefore(tag, firstScript);
+}
+
+// Función que la API llama cuando está lista
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player('youtubeAudioContainer', {
+    height: '0',
+    width: '0',
+    videoId: videoId,
+    playerVars: {
+      autoplay: 1,
+      loop: 1,
+      playlist: videoId,
+      controls: 0,
+      disablekb: 1,
+      modestbranding: 1,
+      rel: 0,
+      mute: 1, // arranca silenciado
+      playsinline: 1
+    },
+    events: {
+      onReady: function(event) {
+        readyToPlay = true;
+        event.target.playVideo();
+      }
+    }
+  });
+}
+
+// Habilitar audio al primer clic/tap
+function enableAudioOnUserGesture() {
+  if (!ytPlayer || !readyToPlay) return;
+  ytPlayer.unMute();
+  ytPlayer.playVideo();
+  musicPlaying = true;
+  updateMusicButton();
+  document.removeEventListener('click', enableAudioOnUserGesture);
+  document.removeEventListener('touchstart', enableAudioOnUserGesture);
+}
+
+// Botón para pausar/reanudar
+function toggleMusic() {
+  if (!ytPlayer) return;
+  if (musicPlaying) {
+    ytPlayer.pauseVideo();
+    musicPlaying = false;
+  } else {
+    ytPlayer.playVideo();
+    musicPlaying = true;
+  }
+  updateMusicButton();
+}
+
+// Actualiza el botón
+function updateMusicButton() {
+  if (!musicBtn) return;
+  if (musicPlaying) {
+    musicBtn.textContent = '🔇';
+    musicBtn.title = 'Pausar música';
+  } else {
+    musicBtn.textContent = '🎵';
+    musicBtn.title = 'Reproducir música';
+  }
+}
+
+// Escuchar primer gesto del usuario
+document.addEventListener('click', enableAudioOnUserGesture, { once: true });
+document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
+
+// Cargar la API de YouTube
+loadYouTubeAPI();
+
+// Conectar el botón flotante
+if (musicBtn) {
+  musicBtn.addEventListener('click', toggleMusic);
+}
+// -------------------------------------------------------------------------------
 
         // Inicialización
         createConfetti();
         createBalloons();
         updateCountdown();
         setInterval(updateCountdown, 1000);
-
-        // Variables de conteo (cargadas desde localStorage si ya existen)
-  let votosNino = localStorage.getItem("votosNino") ? parseInt(localStorage.getItem("votosNino")) : 0;
-  let votosNina = localStorage.getItem("votosNina") ? parseInt(localStorage.getItem("votosNina")) : 0;
-
-  // Función para mostrar resultados en pantalla
-  function mostrarResultados() {
-    document.getElementById("resultado").innerText =
-      `👦 Niño: ${votosNino} votos | 👧 Niña: ${votosNina} votos`;
-  }
-
-  // Llamar apenas cargue la página
-  mostrarResultados();
-
-  // Revisar si ya votó
-  if (localStorage.getItem("yaVoto") === "true") {
-    document.getElementById("btn-nino").disabled = true;
-    document.getElementById("btn-nina").disabled = true;
-    document.getElementById("resultado").innerText += " (Ya votaste)";
-  }
-
-  // Votar por niño
-  document.getElementById("btn-nino").addEventListener("click", () => {
-    if (localStorage.getItem("yaVoto") === "true") {
-      alert("Ya votaste.");
-      return;
-    }
-    votosNino++;
-    localStorage.setItem("votosNino", votosNino);
-    localStorage.setItem("yaVoto", "true");
-    mostrarResultados();
-    document.getElementById("btn-nino").disabled = true;
-    document.getElementById("btn-nina").disabled = true;
-  });
-
-  // Votar por niña
-  document.getElementById("btn-nina").addEventListener("click", () => {
-    if (localStorage.getItem("yaVoto") === "true") {
-      alert("Ya votaste.");
-      return;
-    }
-    votosNina++;
-    localStorage.setItem("votosNina", votosNina);
-    localStorage.setItem("yaVoto", "true");
-    mostrarResultados();
-    document.getElementById("btn-nino").disabled = true;
-    document.getElementById("btn-nina").disabled = true;
-  });
     </script>
 </body>
 </html>
