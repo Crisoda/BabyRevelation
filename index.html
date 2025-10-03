@@ -53,7 +53,6 @@
             }
         }
 
-        /* BANNER MEJORADO CON EFECTO DORADO ESPECTACULAR */
         header {
             text-align: center;
             padding: 80px 20px;
@@ -66,7 +65,6 @@
             box-shadow: 0 10px 40px rgba(212, 175, 55, 0.5);
         }
 
-        /* Patrón de puntos brillantes animados */
         header::before {
             content: '';
             position: absolute;
@@ -83,7 +81,6 @@
             pointer-events: none;
         }
 
-        /* Efecto de brillo superior */
         header::after {
             content: '';
             position: absolute;
@@ -357,7 +354,6 @@
             transform: scale(1.1);
         }
 
-        /* RESULTADOS DE PREDICCIONES MEJORADOS */
         .vote-results {
             margin-top: 40px;
             padding: 40px;
@@ -686,11 +682,6 @@
             transform: scale(1.1);
         }
 
-        /* Iframe oculto para música */
-        #musicIframe {
-            display: none;
-        }
-
         @media (max-width: 768px) {
             h1 {
                 font-size: 2.8em;
@@ -862,7 +853,8 @@
                     </div>
                 </a>
             </div>
-            <p style="text-align: center; font-size: 0.9em; color: #888; margin-top: 25px; font-style: italic;">
+            <p style="text-align: center; font-size: 0.9em; color: #888;
+margin-top: 25px; font-style: italic;">
                 Al hacer clic se abrirá WhatsApp con un mensaje predefinido que puedes personalizar
             </p>
         </div>
@@ -877,7 +869,7 @@
                     WhatsApp
                 </a>
                 
-                <a href="+573172247552" target="_blank" class="contact-btn">
+                <a href="tel:+573172247552" target="_blank" class="contact-btn">
                     <span style="font-size: 1.5em;">📞</span>
                     Llamar
                 </a>
@@ -887,8 +879,7 @@
 
     <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
 
-    <!-- Contenedor para el reproductor de YouTube (invisible) -->
-<div id="youtubeAudioContainer" style="width:0; height:0; overflow:hidden;"></div>
+    <div id="youtubeAudioContainer" style="width:0; height:0; overflow:hidden;"></div>
 
     <footer>
         <p style="font-size: 1.2em; margin-bottom: 10px;">✨ Con amor, esperamos tu compañía ✨</p>
@@ -946,41 +937,48 @@
             }
         }
 
-        // Sistema de votación con almacenamiento en variables
+        // Sistema de votación con localStorage
         let votes = { boy: 0, girl: 0 };
         let hasVoted = false;
 
-        // Intentar cargar votos guardados
-        try {
-            const savedVotes = sessionStorage.getItem('babyRevealVotes');
-            const savedHasVoted = sessionStorage.getItem('babyRevealHasVoted');
-            if (savedVotes) {
-                votes = JSON.parse(savedVotes);
-                hasVoted = savedHasVoted === 'true';
+        // Cargar votos guardados al iniciar
+        function loadVotes() {
+            try {
+                const savedVotes = localStorage.getItem('babyRevealVotes');
+                const savedHasVoted = localStorage.getItem('babyRevealHasVoted');
+                
+                if (savedVotes) {
+                    votes = JSON.parse(savedVotes);
+                }
+                
+                if (savedHasVoted === 'true') {
+                    hasVoted = true;
+                }
+                
                 if (votes.boy > 0 || votes.girl > 0) {
                     document.getElementById('voteResults').style.display = 'block';
                     updateVoteResults();
                 }
+            } catch (e) {
+                console.log('Error al cargar votos:', e);
             }
-        } catch (e) {
-            console.log('Usando almacenamiento en memoria');
         }
 
         function vote(gender) {
             if (hasVoted) {
-                alert('¡Ya has votado! Gracias por tu predicción 😊');
+                alert('¡Ya has votado! Gracias por tu predicción 😊\n\nRecuerda venir vestido con el color de tu equipo el día del evento.');
                 return;
             }
 
             votes[gender]++;
             hasVoted = true;
             
-            // Guardar en sessionStorage si está disponible
+            // Guardar en localStorage
             try {
-                sessionStorage.setItem('babyRevealVotes', JSON.stringify(votes));
-                sessionStorage.setItem('babyRevealHasVoted', 'true');
+                localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
+                localStorage.setItem('babyRevealHasVoted', 'true');
             } catch (e) {
-                console.log('SessionStorage no disponible');
+                console.log('Error al guardar votos:', e);
             }
             
             updateVoteResults();
@@ -989,7 +987,12 @@
             // Animación de confeti adicional
             createConfetti();
             
-            alert(gender === 'boy' ? '¡Votaste por Niño! 👦 Gracias por tu predicción' : '¡Votaste por Niña! 👧 Gracias por tu predicción');
+            // Mensajes personalizados según el voto
+            if (gender === 'boy') {
+                alert('¡Genial! Apostaste por Niño 👦💙\n\nLa dinámica es que el día del evento vengas con alguna prenda de color AZUL para mostrar tu apoyo.\n\n¡Nos vemos el 12 de octubre!');
+            } else {
+                alert('¡Perfecto! Apostaste por Niña 👧💖\n\nLa dinámica es que el día del evento vengas con alguna prenda de color ROSA para mostrar tu apoyo.\n\n¡Nos vemos el 12 de octubre!');
+            }
         }
 
         function updateVoteResults() {
@@ -1021,99 +1024,99 @@
             }
         }
 
-       // ---------------- CONTROL DE MÚSICA DESDE YOUTUBE (solo audio) ----------------
-const videoId = '-C7GwTVg3II'; // ID del video de YouTube
-const container = document.getElementById('youtubeAudioContainer');
-const musicBtn = document.getElementById('musicBtn');
+        // Control de música desde YouTube (solo audio)
+        const videoId = '-C7GwTVg3II';
+        const container = document.getElementById('youtubeAudioContainer');
+        const musicBtn = document.getElementById('musicBtn');
 
-let ytPlayer;
-let musicPlaying = false;
-let readyToPlay = false;
+        let ytPlayer;
+        let musicPlaying = false;
+        let readyToPlay = false;
 
-// Cargar API de YouTube
-function loadYouTubeAPI() {
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  const firstScript = document.getElementsByTagName('script')[0];
-  firstScript.parentNode.insertBefore(tag, firstScript);
-}
+        // Cargar API de YouTube
+        function loadYouTubeAPI() {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScript = document.getElementsByTagName('script')[0];
+            firstScript.parentNode.insertBefore(tag, firstScript);
+        }
 
-// Función que la API llama cuando está lista
-function onYouTubeIframeAPIReady() {
-  ytPlayer = new YT.Player('youtubeAudioContainer', {
-    height: '0',
-    width: '0',
-    videoId: videoId,
-    playerVars: {
-      autoplay: 1,
-      loop: 1,
-      playlist: videoId,
-      controls: 0,
-      disablekb: 1,
-      modestbranding: 1,
-      rel: 0,
-      mute: 1, // arranca silenciado
-      playsinline: 1
-    },
-    events: {
-      onReady: function(event) {
-        readyToPlay = true;
-        event.target.playVideo();
-      }
-    }
-  });
-}
+        // Función que la API llama cuando está lista
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('youtubeAudioContainer', {
+                height: '0',
+                width: '0',
+                videoId: videoId,
+                playerVars: {
+                    autoplay: 1,
+                    loop: 1,
+                    playlist: videoId,
+                    controls: 0,
+                    disablekb: 1,
+                    modestbranding: 1,
+                    rel: 0,
+                    mute: 1,
+                    playsinline: 1
+                },
+                events: {
+                    onReady: function(event) {
+                        readyToPlay = true;
+                        event.target.playVideo();
+                    }
+                }
+            });
+        }
 
-// Habilitar audio al primer clic/tap
-function enableAudioOnUserGesture() {
-  if (!ytPlayer || !readyToPlay) return;
-  ytPlayer.unMute();
-  ytPlayer.playVideo();
-  musicPlaying = true;
-  updateMusicButton();
-  document.removeEventListener('click', enableAudioOnUserGesture);
-  document.removeEventListener('touchstart', enableAudioOnUserGesture);
-}
+        // Habilitar audio al primer clic/tap
+        function enableAudioOnUserGesture() {
+            if (!ytPlayer || !readyToPlay) return;
+            ytPlayer.unMute();
+            ytPlayer.playVideo();
+            musicPlaying = true;
+            updateMusicButton();
+            document.removeEventListener('click', enableAudioOnUserGesture);
+            document.removeEventListener('touchstart', enableAudioOnUserGesture);
+        }
 
-// Botón para pausar/reanudar
-function toggleMusic() {
-  if (!ytPlayer) return;
-  if (musicPlaying) {
-    ytPlayer.pauseVideo();
-    musicPlaying = false;
-  } else {
-    ytPlayer.playVideo();
-    musicPlaying = true;
-  }
-  updateMusicButton();
-}
+        // Botón para pausar/reanudar
+        function toggleMusic() {
+            if (!ytPlayer) return;
+            if (musicPlaying) {
+                ytPlayer.pauseVideo();
+                musicPlaying = false;
+            } else {
+                ytPlayer.playVideo();
+                musicPlaying = true;
+            }
+            updateMusicButton();
+        }
 
-// Actualiza el botón
-function updateMusicButton() {
-  if (!musicBtn) return;
-  if (musicPlaying) {
-    musicBtn.textContent = '🔇';
-    musicBtn.title = 'Pausar música';
-  } else {
-    musicBtn.textContent = '🎵';
-    musicBtn.title = 'Reproducir música';
-  }
-}
+        // Actualiza el botón
+        function updateMusicButton() {
+            if (!musicBtn) return;
+            if (musicPlaying) {
+                musicBtn.textContent = '🔇';
+                musicBtn.title = 'Pausar música';
+            } else {
+                musicBtn.textContent = '🎵';
+                musicBtn.title = 'Reproducir música';
+            }
+        }
 
-// Escuchar primer gesto del usuario
-document.addEventListener('click', enableAudioOnUserGesture, { once: true });
-document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
+        // Escuchar primer gesto del usuario
+        document.addEventListener('click', enableAudioOnUserGesture, { once: true });
+        document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
 
-// Cargar la API de YouTube
-loadYouTubeAPI();
+        // Cargar la API de YouTube
+        loadYouTubeAPI();
 
-// Conectar el botón flotante
-if (musicBtn) {
-  musicBtn.addEventListener('click', toggleMusic);
-}
-// -------------------------------------------------------------------------------
+        // Conectar el botón flotante
+        if (musicBtn) {
+            musicBtn.addEventListener('click', toggleMusic);
+        }
 
         // Inicialización
+        loadVotes(); // Cargar votos al inicio
         createConfetti();
         createBalloons();
         updateCountdown();
