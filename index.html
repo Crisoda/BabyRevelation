@@ -377,6 +377,15 @@
             animation: rotate 8s linear infinite;
         }
 
+        /* Estilo para el mensaje que aparece después de votar */
+#mensaje-dinamica {
+  font-weight: 700;
+  color: #d4af37; /* dorado */
+  text-align: center;
+  margin-top: 15px;
+  font-size: 1.05em;
+}
+
         @keyframes rotate {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -826,6 +835,9 @@
                         Total de predicciones: <strong id="totalVotes">0</strong>
                     </p>
                 </div>
+                <div id="resultado">Aún no hay votos</div>
+                <p id="mensaje-dinamica" style="font-weight:bold; margin-top:15px;"></p>
+
             </div>
         </div>
 
@@ -938,153 +950,86 @@ margin-top: 25px; font-style: italic;">
         }
 
         // ========== SISTEMA DE VOTACIÓN CON API GRATUITA ==========
-        // Configuración de la API (JSONBin.io)
-        const API_URL = 'https://api.jsonbin.io/v3/b/68e046ef43b1c97be9598609'; // Bin 
-        const API_KEY = '$2a$10$JW71HN9x6iU2Fovv3vd70u8/66phv/yNcHaXMaWMNeyLzzbX0Eimm'; // API Key 
+        // === Sistema de votación limpio (localStorage, persistente por navegador) ===
+let votes = { boy: 0, girl: 0 };
+let hasVoted = false;
+let savedChoice = null;
 
-        let votes = { boy: 0, girl: 0 };
-        let hasVoted = false;
+(function initVoting() {
+  try {
+    const savedVotes = localStorage.getItem('babyRevealVotes');
+    const savedHasVoted = localStorage.getItem('babyRevealHasVoted');
+    const savedChoiceStr = localStorage.getItem('babyRevealChoice');
 
-        // Cargar votos desde la API
-        async function loadVotes() {
-            try {
-                // Primero verificar si ya votó localmente
-                const localVoted = localStorage.getItem('babyRevealHasVoted');
-                if (localVoted === 'true') {
-                    hasVoted = true;
-                }
+    if (savedVotes) votes = JSON.parse(savedVotes);
+    hasVoted = savedHasVoted === 'true';
+    if (savedChoiceStr) savedChoice = savedChoiceStr;
 
-                // Cargar votos globales desde la API
-const response = await fetch(API_URL + '/latest', {
-    method: 'GET',
-    headers: {
-        'X-Master-Key': API_KEY
+    // Si ya hay votos, mostrar panel de resultados y actualizar barras
+    if ((votes.boy || 0) > 0 || (votes.girl || 0) > 0) {
+      document.getElementById('voteResults').style.display = 'block';
+      updateVoteResults();
     }
-});
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.record && data.record.boy !== undefined) {
-                        votes = data.record;
-                        document.getElementById('voteResults').style.display = 'block';
-                        updateVoteResults();
-                    }
-                }
-            } catch (e) {
-                console.log('Error al cargar votos:', e);
-                // Si falla la API, usar localStorage local
-                loadLocalVotes();
-            }
-        }
 
-        // Fallback a localStorage si la API falla
-        function loadLocalVotes() {
-            try {
-                const savedVotes = localStorage.getItem('babyRevealVotes');
-                const savedHasVoted = localStorage.getItem('babyRevealHasVoted');
-                
-                if (savedVotes) {
-                    votes = JSON.parse(savedVotes);
-                }
-                
-                if (savedHasVoted === 'true') {
-                    hasVoted = true;
-                }
-                
-                if (votes.boy > 0 || votes.girl > 0) {
-                    document.getElementById('voteResults').style.display = 'block';
-                    updateVoteResults();
-                }
-            } catch (e) {
-                console.log('Error al cargar votos locales:', e);
-            }
-        }
+    // Si ya votó en este navegador, desactivar botones y mostrar mensaje guardado
+    if (hasVoted) {
+      disableVoteButtons();
+      if (savedChoice) showDynamicMessage(savedChoice);
+    }
+  } catch (e) {
+    console.warn('localStorage no disponible, usando memoria temporal:', e);
+  }
+})();
 
-        // Guardar votos en la API
-        async function saveVotes() {
-            try {
-const response = await fetch(API_URL, {
-    method: 'PUT',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY
-    },
-    body: JSON.stringify(votes)
-});
+// Función llamada desde los botones: onclick="vote('boy')" / onclick="vote('girl')"
+function vote(gender) {
+  if (hasVoted) {
+    alert('❌ Ya has votado. Gracias por tu predicción 😊');
+    return;
+  }
+  if (gender !== 'boy' && gender !== 'girl') return;
 
-                if (!response.ok) {
-                    throw new Error('Error al guardar votos');
-                }
-            } catch (e) {
-                console.log('Error al guardar en API:', e);
-                // Guardar localmente como fallback
-                localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
-            }
-        }
+  // Incrementar
+  votes[gender] = (votes[gender] || 0) + 1;
+  hasVoted = true;
+  savedChoice = gender;
 
-        async function vote(gender) {
-            if (hasVoted) {
-                alert('¡Ya has votado! Gracias por tu predicción 😊\n\nRecuerda venir vestido con el color de tu equipo el día del evento.');
-                return;
-            }
+  // Guardar
+  try {
+    localStorage.setItem('babyRevealVotes', JSON.stringify(votes));
+    localStorage.setItem('babyRevealHasVoted', 'true');
+    localStorage.setItem('babyRevealChoice', gender);
+  } catch (e) {
+    console.warn('No se pudo usar localStorage:', e);
+  }
 
-            votes[gender]++;
-            hasVoted = true;
-            
-            // Guardar localmente que ya votó
-            localStorage.setItem('babyRevealHasVoted', 'true');
-            
-            // Guardar en la API
-            await saveVotes();
-            
-            // Actualizar vista
-            updateVoteResults();
-            document.getElementById('voteResults').style.display = 'block';
-            
-            // Animación de confeti adicional
-            createConfetti();
-            
-            // Mensajes personalizados según el voto
-            if (gender === 'boy') {
-                alert('¡Genial! Apostaste por Niño 👦💙\n\nLa dinámica es que el día del evento vengas con alguna prenda de color AZUL para mostrar tu apoyo.\n\n¡Nos vemos el 12 de octubre!');
-            } else {
-                alert('¡Perfecto! Apostaste por Niña 👧💖\n\nLa dinámica es que el día del evento vengas con alguna prenda de color ROSA para mostrar tu apoyo.\n\n¡Nos vemos el 12 de octubre!');
-            }
+  // Mostrar resultados y feedback
+  document.getElementById('voteResults').style.display = 'block';
+  updateVoteResults();
+  disableVoteButtons();
+  createConfetti();
+  showDynamicMessage(gender);
+}
 
-            // Recargar votos después de 1 segundo para ver actualizaciones
-            setTimeout(loadVotes, 1000);
-        }
+// Desactivar botones (aplica estilo visual y disabled)
+function disableVoteButtons() {
+  const btns = document.querySelectorAll('.vote-btn');
+  btns.forEach(b => {
+    b.disabled = true;
+    b.classList.add('disabled');
+  });
+}
 
-        function updateVoteResults() {
-            const total = votes.boy + votes.girl;
-            const boyPercent = total > 0 ? Math.round((votes.boy / total) * 100) : 0;
-            const girlPercent = total > 0 ? Math.round((votes.girl / total) * 100) : 0;
-
-            document.getElementById('boyPercentage').textContent = boyPercent + '%';
-            document.getElementById('girlPercentage').textContent = girlPercent + '%';
-            document.getElementById('boyBar').style.width = boyPercent + '%';
-            document.getElementById('girlBar').style.width = girlPercent + '%';
-            document.getElementById('boyBar').textContent = votes.boy + ' voto' + (votes.boy !== 1 ? 's' : '');
-            document.getElementById('girlBar').textContent = votes.girl + ' voto' + (votes.girl !== 1 ? 's' : '');
-            document.getElementById('totalVotes').textContent = total;
-
-            // Mostrar badge de "Liderando"
-            const boyLeading = document.getElementById('boyLeading');
-            const girlLeading = document.getElementById('girlLeading');
-            
-            if (votes.boy > votes.girl) {
-                boyLeading.style.display = 'inline-block';
-                girlLeading.style.display = 'none';
-            } else if (votes.girl > votes.boy) {
-                girlLeading.style.display = 'inline-block';
-                boyLeading.style.display = 'none';
-            } else {
-                boyLeading.style.display = 'none';
-                girlLeading.style.display = 'none';
-            }
-        }
-
-        // Recargar votos cada 10 segundos para ver actualizaciones en tiempo real
-        setInterval(loadVotes, 10000);
+// Mostrar frase dinámica según elección
+function showDynamicMessage(gender) {
+  const el = document.getElementById('mensaje-dinamica');
+  if (!el) return;
+  if (gender === 'boy') {
+    el.textContent = '¡Genial! Apostaste por Niño 👦💙. La dinámica es que el día del evento vengas con alguna prenda de color azul para mostrar tu apoyo.';
+  } else {
+    el.textContent = '¡Perfecto! Apostaste por Niña 👧💖. La dinámica es que el día del evento vengas con alguna prenda de color rosa para mostrar tu apoyo.';
+  }
+}
 
         // Control de música desde YouTube (solo audio)
         const videoId = '-C7GwTVg3II';
