@@ -876,7 +876,7 @@
         </div>
     </div>
 
-    <button class="music-control" id="musicBtn" onclick="toggleMusic()">🎵</button>
+   <button class="music-control" id="musicBtn">🎵</button>
 
     <div id="youtubeAudioContainer" style="width:0; height:0; overflow:hidden;"></div>
 
@@ -1174,24 +1174,32 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
         }
 
         // Escuchar clics en toda la página
-        document.addEventListener('click', enableAudioOnFirstClick, { once: true });
-        document.addEventListener('touchstart', enableAudioOnFirstClick, { once: true });
+        document.addEventListener('click', enableAudioOnFirstClick);
+        document.addEventListener('touchstart', enableAudioOnFirstClick);
 
-        function toggleMusic() {
+        function toggleMusic(event) {
+            // Prevenir que el clic se propague
+            if (event) {
+                event.stopPropagation();
+            }
+            
             if (!ytPlayer || !playerReady) {
                 console.log('Reproductor no está listo');
                 return;
             }
 
             try {
+                // Si es la primera interacción, activar audio primero
                 if (!userHasInteracted) {
                     ytPlayer.unMute();
                     ytPlayer.setVolume(100);
                     userHasInteracted = true;
+                    console.log('Audio activado por botón');
                     updateMusicButton();
                     return;
                 }
 
+                // Toggle play/pause
                 if (musicPlaying) {
                     ytPlayer.pauseVideo();
                     musicPlaying = false;
@@ -1206,7 +1214,6 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
                 console.log('Error al controlar música:', e);
             }
         }
-
         function updateMusicButton() {
             const musicBtn = document.getElementById('musicBtn');
             if (!musicBtn) return;
@@ -1222,7 +1229,23 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
 
         // Inicializar la API de YouTube cuando cargue la página
         loadYouTubeAPI();
+        // Inicializar la API de YouTube cuando cargue la página
+        loadYouTubeAPI();
         
+        // Agregar listener al botón de música DESPUÉS de que todo esté definido
+        const musicBtn = document.getElementById('musicBtn');
+        if (musicBtn) {
+            musicBtn.addEventListener('click', function(event) {
+                toggleMusic(event);
+            });
+        }
+
+        // Inicialización
+        loadVotes();
+        createConfetti();
+        createBalloons();
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
         if (musicBtn) {
             musicBtn.addEventListener('click', toggleMusic);
         }
