@@ -1161,12 +1161,16 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
             updateMusicButton();
         }
 
-        // Configurar el botón de música
+      // Configurar el botón de música
         function setupMusicButton() {
             const musicBtn = document.getElementById('musicBtn');
             if (musicBtn) {
-                musicBtn.onclick = function(event) {
+                // Usar tanto click como touchend para mejor compatibilidad móvil
+                const handleMusicToggle = function(event) {
                     event.stopPropagation();
+                    event.preventDefault();
+                    
+                    console.log('Botón de música presionado');
                     
                     if (!ytPlayer || !playerReady) {
                         console.log('Reproductor no está listo');
@@ -1178,6 +1182,7 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
                         if (!userHasInteracted) {
                             ytPlayer.unMute();
                             ytPlayer.setVolume(100);
+                            ytPlayer.playVideo();
                             userHasInteracted = true;
                             console.log('Audio activado por botón');
                             updateMusicButton();
@@ -1199,22 +1204,38 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
                         console.log('Error al controlar música:', e);
                     }
                 };
-                console.log('Botón de música configurado');
+                
+                musicBtn.addEventListener('click', handleMusicToggle);
+                musicBtn.addEventListener('touchend', handleMusicToggle);
+                console.log('Botón de música configurado para móvil y desktop');
             }
         }
 
-        // Activar audio al primer clic en la página (excepto el botón)
+// Activar audio al primer clic en la página (excepto el botón)
         function enableAudioOnFirstClick(event) {
+            console.log('Evento detectado:', event.type);
+            
             // Si el clic es en el botón de música, no hacer nada aquí
-            if (event.target.id === 'musicBtn' || event.target.closest('#musicBtn')) {
+            if (event.target && (event.target.id === 'musicBtn' || event.target.closest('#musicBtn'))) {
+                console.log('Clic en botón de música - ignorado');
                 return;
             }
             
-            if (!ytPlayer || !playerReady || userHasInteracted) return;
+            if (!ytPlayer || !playerReady) {
+                console.log('Reproductor no está listo aún');
+                return;
+            }
+            
+            if (userHasInteracted) {
+                console.log('Usuario ya interactuó');
+                return;
+            }
             
             try {
+                console.log('Intentando activar audio...');
                 ytPlayer.unMute();
                 ytPlayer.setVolume(100);
+                ytPlayer.playVideo(); // Forzar reproducción
                 userHasInteracted = true;
                 console.log('Música activada - usuario interactuó con la página');
                 updateMusicButton();
@@ -1222,10 +1243,10 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
                 console.log('Error al activar audio:', e);
             }
         }
-
-        // Escuchar clics en toda la página
+// Escuchar clics/toques en toda la página (mejor compatibilidad móvil)
         document.addEventListener('click', enableAudioOnFirstClick);
-        document.addEventListener('touchstart', enableAudioOnFirstClick);
+        document.addEventListener('touchstart', enableAudioOnFirstClick, { passive: true });
+        document.addEventListener('touchend', enableAudioOnFirstClick, { passive: true });
 
         function updateMusicButton() {
             const musicBtn = document.getElementById('musicBtn');
