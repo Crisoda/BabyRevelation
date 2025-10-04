@@ -846,15 +846,14 @@
                 
                 <a href="https://wa.me/573172247552?text=Hola,%20lamentablemente%20no%20podré%20asistir%20a%20la%20revelación%20del%20bebé.%20😢%0A%0APero%20les%20envío%20mis%20mejores%20deseos%20❤️" target="_blank" class="rsvp-card no-card">
                     <div class="rsvp-icon">💐</div>
-                    <h3>No podré asistir</h3>
+<h3>No podré asistir</h3>
                     <p>Enviar buenos deseos</p>
                     <div class="whatsapp-badge">
                         <span>📱</span> WhatsApp
                     </div>
                 </a>
             </div>
-            <p style="text-align: center; font-size: 0.9em; color: #888;
-margin-top: 25px; font-style: italic;">
+            <p style="text-align: center; font-size: 0.9em; color: #888; margin-top: 25px; font-style: italic;">
                 Al hacer clic se abrirá WhatsApp con un mensaje predefinido que puedes personalizar
             </p>
         </div>
@@ -939,8 +938,9 @@ margin-top: 25px; font-style: italic;">
 
         // ========== SISTEMA DE VOTACIÓN CON API GRATUITA ==========
         // Configuración de la API (JSONBin.io)
-        const API_URL = 'https://api.jsonbin.io/v3/b/68e046ef43b1c97be9598609'; // Bin 
-        const API_KEY = '$2a$10$JW71HN9x6iU2Fovv3vd70u8/66phv/yNcHaXMaWMNeyLzzbX0Eimm'; // API Key 
+        const BIN_ID = '68e046ef43b1c97be9598609'; // Tu Bin ID
+        const API_KEY = '$2a$10$JW71HN9x6iU2Fovv3vd70u8/66phv/yNcHaXMaWMNeyLzzbX0Eimm'; // Tu API Key
+        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
         let votes = { boy: 0, girl: 0 };
         let hasVoted = false;
@@ -955,19 +955,24 @@ margin-top: 25px; font-style: italic;">
                 }
 
                 // Cargar votos globales desde la API
-const response = await fetch(API_URL + '/latest', {
-    method: 'GET',
-    headers: {
-        'X-Master-Key': API_KEY
-    }
-});
+                const response = await fetch(`${API_URL}/latest`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Master-Key': API_KEY
+                    }
+                });
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Datos recibidos de la API:', data);
                     if (data.record && data.record.boy !== undefined) {
                         votes = data.record;
                         document.getElementById('voteResults').style.display = 'block';
                         updateVoteResults();
                     }
+                } else {
+                    console.log('Error en la respuesta:', response.status);
+                    loadLocalVotes();
                 }
             } catch (e) {
                 console.log('Error al cargar votos:', e);
@@ -1002,18 +1007,23 @@ const response = await fetch(API_URL + '/latest', {
         // Guardar votos en la API
         async function saveVotes() {
             try {
-const response = await fetch(API_URL, {
-    method: 'PUT',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY
-    },
-    body: JSON.stringify(votes)
-});
+                console.log('Guardando votos:', votes);
+                const response = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(votes)
+                });
 
                 if (!response.ok) {
+                    console.log('Error al guardar:', response.status);
                     throw new Error('Error al guardar votos');
                 }
+                
+                const result = await response.json();
+                console.log('Votos guardados exitosamente:', result);
             } catch (e) {
                 console.log('Error al guardar en API:', e);
                 // Guardar localmente como fallback
