@@ -1097,84 +1097,132 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
         setInterval(loadVotes, 10000);
 
         // Control de música desde YouTube (solo audio)
-        const videoId = '-C7GwTVg3II';
-        const container = document.getElementById('youtubeAudioContainer');
-        const musicBtn = document.getElementById('musicBtn');
-
-        let ytPlayer;
+        let ytPlayer = null;
         let musicPlaying = false;
-        let readyToPlay = false;
+        let playerReady = false;
+        let userHasInteracted = false;
 
+        // Cargar API de YouTube
         function loadYouTubeAPI() {
+            if (window.YT) {
+                initPlayer();
+                return;
+            }
             const tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
             const firstScript = document.getElementsByTagName('script')[0];
             firstScript.parentNode.insertBefore(tag, firstScript);
         }
 
-        function onYouTubeIframeAPIReady() {
+        // Esta función la llama automáticamente la API de YouTube cuando está lista
+        window.onYouTubeIframeAPIReady = function() {
+            initPlayer();
+        };
+
+        function initPlayer() {
             ytPlayer = new YT.Player('youtubeAudioContainer', {
                 height: '0',
                 width: '0',
-                videoId: videoId,
+                videoId: '-C7GwTVg3II',
                 playerVars: {
                     autoplay: 1,
                     loop: 1,
-                    playlist: videoId,
+                    playlist: '-C7GwTVg3II',
                     controls: 0,
                     disablekb: 1,
                     modestbranding: 1,
                     rel: 0,
-                    mute: 1,
-                    playsinline: 1
+                    playsinline: 1,
+                    mute: 1
                 },
                 events: {
-                    onReady: function(event) {
-                        readyToPlay = true;
-                        event.target.playVideo();
-                    }
+                    onReady: onPlayerReady,
+                    onStateChange: onPlayerStateChange
                 }
             });
         }
 
-        function enableAudioOnUserGesture() {
-            if (!ytPlayer || !readyToPlay) return;
-            ytPlayer.unMute();
-            ytPlayer.playVideo();
-            musicPlaying = true;
+        function onPlayerReady(event) {
+            playerReady = true;
+            console.log('Reproductor listo - música iniciando muteada');
+            event.target.playVideo();
             updateMusicButton();
-            document.removeEventListener('click', enableAudioOnUserGesture);
-            document.removeEventListener('touchstart', enableAudioOnUserGesture);
         }
 
-        function toggleMusic() {
-            if (!ytPlayer) return;
-            if (musicPlaying) {
-                ytPlayer.pauseVideo();
-                musicPlaying = false;
-            } else {
-                ytPlayer.playVideo();
+        function onPlayerStateChange(event) {
+            if (event.data === 1) {
                 musicPlaying = true;
+            } else if (event.data === 2) {
+                musicPlaying = false;
             }
             updateMusicButton();
         }
 
+        // Activar audio al primer clic en la página
+        function enableAudioOnFirstClick() {
+            if (!ytPlayer || !playerReady || userHasInteracted) return;
+            
+            try {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(100);
+                userHasInteracted = true;
+                console.log('Música activada - usuario interactuó con la página');
+                updateMusicButton();
+            } catch (e) {
+                console.log('Error al activar audio:', e);
+            }
+        }
+
+        // Escuchar clics en toda la página
+        document.addEventListener('click', enableAudioOnFirstClick, { once: true });
+        document.addEventListener('touchstart', enableAudioOnFirstClick, { once: true });
+
+        function toggleMusic() {
+            if (!ytPlayer || !playerReady) {
+                console.log('Reproductor no está listo');
+                return;
+            }
+
+            try {
+                if (!userHasInteracted) {
+                    ytPlayer.unMute();
+                    ytPlayer.setVolume(100);
+                    userHasInteracted = true;
+                    updateMusicButton();
+                    return;
+                }
+
+                if (musicPlaying) {
+                    ytPlayer.pauseVideo();
+                    musicPlaying = false;
+                    console.log('Música pausada');
+                } else {
+                    ytPlayer.playVideo();
+                    musicPlaying = true;
+                    console.log('Música reproduciendo');
+                }
+                updateMusicButton();
+            } catch (e) {
+                console.log('Error al controlar música:', e);
+            }
+        }
+
         function updateMusicButton() {
+            const musicBtn = document.getElementById('musicBtn');
             if (!musicBtn) return;
-            if (musicPlaying) {
-                musicBtn.textContent = '🔇';
+            
+            if (musicPlaying && userHasInteracted) {
+                musicBtn.textContent = '🔊';
                 musicBtn.title = 'Pausar música';
             } else {
-                musicBtn.textContent = '🎵';
+                musicBtn.textContent = '🔇';
                 musicBtn.title = 'Reproducir música';
             }
         }
 
-        document.addEventListener('click', enableAudioOnUserGesture, { once: true });
-        document.addEventListener('touchstart', enableAudioOnUserGesture, { once: true });
-
+        // Inicializar la API de YouTube cuando cargue la página
         loadYouTubeAPI();
-
+        
         if (musicBtn) {
             musicBtn.addEventListener('click', toggleMusic);
         }
