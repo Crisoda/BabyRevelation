@@ -1096,7 +1096,7 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
         // Recargar votos cada 10 segundos para ver actualizaciones en tiempo real
         setInterval(loadVotes, 10000);
 
-        // Control de música desde YouTube (solo audio)
+       // Control de música desde YouTube (solo audio)
         let ytPlayer = null;
         let musicPlaying = false;
         let playerReady = false;
@@ -1147,6 +1147,9 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
             console.log('Reproductor listo - música iniciando muteada');
             event.target.playVideo();
             updateMusicButton();
+            
+            // Configurar botón cuando el reproductor esté listo
+            setupMusicButton();
         }
 
         function onPlayerStateChange(event) {
@@ -1158,8 +1161,55 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
             updateMusicButton();
         }
 
-        // Activar audio al primer clic en la página
-        function enableAudioOnFirstClick() {
+        // Configurar el botón de música
+        function setupMusicButton() {
+            const musicBtn = document.getElementById('musicBtn');
+            if (musicBtn) {
+                musicBtn.onclick = function(event) {
+                    event.stopPropagation();
+                    
+                    if (!ytPlayer || !playerReady) {
+                        console.log('Reproductor no está listo');
+                        return;
+                    }
+
+                    try {
+                        // Si es la primera interacción, activar audio primero
+                        if (!userHasInteracted) {
+                            ytPlayer.unMute();
+                            ytPlayer.setVolume(100);
+                            userHasInteracted = true;
+                            console.log('Audio activado por botón');
+                            updateMusicButton();
+                            return;
+                        }
+
+                        // Toggle play/pause
+                        if (musicPlaying) {
+                            ytPlayer.pauseVideo();
+                            musicPlaying = false;
+                            console.log('Música pausada');
+                        } else {
+                            ytPlayer.playVideo();
+                            musicPlaying = true;
+                            console.log('Música reproduciendo');
+                        }
+                        updateMusicButton();
+                    } catch (e) {
+                        console.log('Error al controlar música:', e);
+                    }
+                };
+                console.log('Botón de música configurado');
+            }
+        }
+
+        // Activar audio al primer clic en la página (excepto el botón)
+        function enableAudioOnFirstClick(event) {
+            // Si el clic es en el botón de música, no hacer nada aquí
+            if (event.target.id === 'musicBtn' || event.target.closest('#musicBtn')) {
+                return;
+            }
+            
             if (!ytPlayer || !playerReady || userHasInteracted) return;
             
             try {
@@ -1177,43 +1227,6 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
         document.addEventListener('click', enableAudioOnFirstClick);
         document.addEventListener('touchstart', enableAudioOnFirstClick);
 
-        function toggleMusic(event) {
-            // Prevenir que el clic se propague
-            if (event) {
-                event.stopPropagation();
-            }
-            
-            if (!ytPlayer || !playerReady) {
-                console.log('Reproductor no está listo');
-                return;
-            }
-
-            try {
-                // Si es la primera interacción, activar audio primero
-                if (!userHasInteracted) {
-                    ytPlayer.unMute();
-                    ytPlayer.setVolume(100);
-                    userHasInteracted = true;
-                    console.log('Audio activado por botón');
-                    updateMusicButton();
-                    return;
-                }
-
-                // Toggle play/pause
-                if (musicPlaying) {
-                    ytPlayer.pauseVideo();
-                    musicPlaying = false;
-                    console.log('Música pausada');
-                } else {
-                    ytPlayer.playVideo();
-                    musicPlaying = true;
-                    console.log('Música reproduciendo');
-                }
-                updateMusicButton();
-            } catch (e) {
-                console.log('Error al controlar música:', e);
-            }
-        }
         function updateMusicButton() {
             const musicBtn = document.getElementById('musicBtn');
             if (!musicBtn) return;
@@ -1228,10 +1241,7 @@ const API_URL = 'https://api.jsonbin.io/v3/b/68e07a23d0ea881f409492f7';
         }
 
         // Inicializar la API de YouTube cuando cargue la página
-        loadYouTubeAPI();
-        // Inicializar la API de YouTube cuando cargue la página
-        loadYouTubeAPI();
-        
+        loadYouTubeAPI();        
         // Agregar listener al botón de música DESPUÉS de que todo esté definido
         const musicBtn = document.getElementById('musicBtn');
         if (musicBtn) {
